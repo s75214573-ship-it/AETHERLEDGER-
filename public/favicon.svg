@@ -1,0 +1,37 @@
+<svg width="64" height="64" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" rx="44" fill="#040918" />
+  <linearGradient id="orbitGradFav" x1="20" y1="90" x2="180" y2="70" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stopColor="#00f2fe" />
+    <stop offset="100%" stopColor="#0284c7" />
+  </linearGradient>
+  <linearGradient id="legLeftFav" x1="60" y1="140" x2="100" y2="40" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stopColor="#0284c7" />
+    <stop offset="100%" stopColor="#38bdf8" />
+  </linearGradient>
+  <linearGradient id="legRightFav" x1="100" y1="40" x2="148" y2="140" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stopColor="#0077b6" />
+    <stop offset="100%" stopColor="#0369a1" />
+  </linearGradient>
+  <path d="M 35 110 C 25 78, 120 40, 172 70" stroke="url(#orbitGradFav)" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6" />
+  <path d="M 52 142 L 88 48 C 91 40, 100 40, 103 48 L 115 76 L 82 142 Z" fill="url(#legLeftFav)" />
+  <path d="M 98 48 L 148 142 L 120 142 L 88 78 Z" fill="url(#legRightFav)" />
+  <path d="M 88 48 C 93 36, 107 36, 112 48 L 100 76 Z" fill="#38bdf8" />
+  <g transform="translate(0, -6)">
+    <polygon points="100,80 114,87 100,94 86,87" fill="#67e8f9" />
+    <polygon points="86,87 100,94 100,99 86,92" fill="#06b6d4" />
+    <polygon points="100,94 114,87 114,92 100,99" fill="#0891b2" />
+  </g>
+  <g transform="translate(0, 7)">
+    <polygon points="100,85 116,93 100,101 84,93" fill="#22d3ee" />
+    <polygon points="84,93 100,101 100,107 84,99" fill="#06b6d4" />
+    <polygon points="100,101 116,93 116,99 100,107" fill="#0e7490" />
+  </g>
+  <g transform="translate(0, 20)">
+    <polygon points="100,90 118,99 100,108 82,99" fill="#06b6d4" />
+    <polygon points="82,99 100,108 100,115 82,106" fill="#0891b2" />
+    <polygon points="100,108 118,99 118,106 100,115" fill="#155e75" />
+  </g>
+  <path d="M 45 115 C 65 145, 150 135, 175 75 C 182 60, 160 50, 130 60" stroke="url(#orbitGradFav)" stroke-width="6" stroke-linecap="round" fill="none" />
+  <circle cx="152" cy="62" r="9" fill="#a5f3fc" />
+  <circle cx="152" cy="62" r="5" fill="#ffffff" />
+</svg>

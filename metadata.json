@@ -1,0 +1,6 @@
+{
+  "name": "AetherLedger — Production Asset & Session Platform",
+  "description": "Enterprise-grade financial session and transaction ledger with real-time Firebase Authentication, multi-tier roles, atomic wallet operations, automated session lifecycle, and administrative oversight.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

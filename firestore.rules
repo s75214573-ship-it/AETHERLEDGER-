@@ -1,0 +1,216 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all unhandled paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'itsalexbro0021@gmail.com' ||
+          request.auth.token.email.lower() == 's75214573@gmail.com'
+        )) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'])
+      );
+    }
+
+    function isSupport() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'support')
+      );
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isSupport() || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isSupport() || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) &&
+        incoming().uid == userId &&
+        incoming().email is string && incoming().email.size() <= 200 &&
+        incoming().role in ['user', 'admin', 'super_admin'] &&
+        incoming().status == 'active';
+      allow update: if (isAdmin() && isValidId(userId)) || (
+        isSignedIn() && request.auth.uid == userId &&
+        incoming().uid == existing().uid &&
+        incoming().status == existing().status &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt', 'lastLoginAt', 'rewardClaimed', 'role'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Wallets Collection ---
+    match /wallets/{walletId} {
+      allow get: if isSignedIn() && (request.auth.uid == walletId || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if (isAdmin() && isValidId(walletId)) || (
+        isSignedIn() && request.auth.uid == walletId && isValidId(walletId) &&
+        incoming().uid == walletId &&
+        incoming().availableBalance >= 0 &&
+        incoming().pendingBalance >= 0 &&
+        incoming().lockedBalance >= 0
+      );
+      allow update: if isAdmin() || (
+        isSignedIn() && request.auth.uid == walletId &&
+        incoming().uid == existing().uid &&
+        incoming().availableBalance >= 0 &&
+        incoming().pendingBalance >= 0 &&
+        incoming().lockedBalance >= 0
+      );
+      allow delete: if false;
+    }
+
+    // --- Transactions Collection (Authoritative Ledger) ---
+    match /transactions/{transactionId} {
+      allow get: if isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(transactionId) && (
+        isAdmin() || (
+          incoming().uid == request.auth.uid &&
+          incoming().type in ['CREDIT', 'DEBIT'] &&
+          incoming().amount > 0 &&
+          incoming().status in ['completed', 'pending', 'failed']
+        )
+      );
+      allow update, delete: if false; // Transactions are strictly immutable
+    }
+
+    // --- Plans Collection ---
+    match /plans/{planId} {
+      allow get, list: if true; // Public catalog of investment plans
+      allow create, update, delete: if isAdmin() && isValidId(planId);
+    }
+
+    // --- Sessions Collection ---
+    match /sessions/{sessionId} {
+      allow get: if isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(sessionId) && (
+        isAdmin() || (
+          incoming().uid == request.auth.uid &&
+          incoming().principal > 0 &&
+          incoming().status in ['pending', 'active']
+        )
+      );
+      allow update: if isAdmin() || (
+        isSignedIn() && existing().uid == request.auth.uid &&
+        incoming().uid == existing().uid &&
+        existing().status == 'active' &&
+        incoming().status in ['active', 'completed']
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Deposits Collection ---
+    match /deposits/{depositId} {
+      allow get: if isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(depositId) &&
+        incoming().uid == request.auth.uid &&
+        incoming().amount > 0 &&
+        incoming().status in ['pending', 'processing'];
+      allow update: if isAdmin(); // Only administrators or settlement webhook can finalize deposits
+      allow delete: if isAdmin();
+    }
+
+    // --- Withdrawals Collection ---
+    match /withdrawals/{withdrawalId} {
+      allow get: if isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(withdrawalId) &&
+        incoming().uid == request.auth.uid &&
+        incoming().amount >= 30000 && // Minimum ₹300
+        incoming().status == 'pending';
+      allow update: if isAdmin(); // Only admins/compliance can review and settle
+      allow delete: if false;
+    }
+
+    // --- Support Tickets Collection ---
+    match /supportTickets/{ticketId} {
+      allow get: if isSignedIn() && (existing().uid == request.auth.uid || isSupport() || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isSupport() || isAdmin());
+      allow create: if isSignedIn() && isValidId(ticketId) &&
+        incoming().uid == request.auth.uid &&
+        incoming().subject is string && incoming().subject.size() <= 150;
+      allow update: if isSupport() || isAdmin() || (
+        isSignedIn() && existing().uid == request.auth.uid &&
+        incoming().uid == existing().uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+      );
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() && (
+          get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.uid == request.auth.uid ||
+          isSupport() || isAdmin()
+        );
+        allow create: if isSignedIn() && isValidId(messageId) && (
+          isAdmin() || isSupport() || (
+            get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.uid == request.auth.uid &&
+            incoming().senderUid == request.auth.uid
+          )
+        );
+        allow update, delete: if false;
+      }
+    }
+
+    // --- Notifications Collection ---
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAdmin() || (isSignedIn() && incoming().uid == request.auth.uid);
+      allow update: if isSignedIn() && existing().uid == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isSignedIn() && existing().uid == request.auth.uid;
+    }
+
+    // --- Admin Logs Collection ---
+    match /adminLogs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin() && isValidId(logId);
+      allow update, delete: if false; // Append-only audit logs
+    }
+
+    // --- System Settings Collection ---
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Admin bootstrap registry ---
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin() || (
+        isSignedIn() && request.auth.uid == adminId &&
+        request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'itsalexbro0021@gmail.com' ||
+          request.auth.token.email.lower() == 's75214573@gmail.com'
+        )
+      );
+    }
+  }
+}

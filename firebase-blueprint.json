@@ -1,0 +1,251 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role and account status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 200 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "role": { "type": "string", "enum": ["user", "support", "admin", "super_admin"] },
+        "status": { "type": "string", "enum": ["active", "suspended", "closed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "lastLoginAt": { "type": "string", "format": "date-time" },
+        "rewardClaimed": { "type": "boolean" }
+      },
+      "required": ["uid", "email", "role", "status", "createdAt"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "User wallet ledger summary with integer currency units",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "availableBalance": { "type": "integer" },
+        "pendingBalance": { "type": "integer" },
+        "lockedBalance": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "availableBalance", "pendingBalance", "lockedBalance"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Authoritative immutable financial transaction record",
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string", "maxLength": 128 },
+        "uid": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["CREDIT", "DEBIT"] },
+        "category": { "type": "string", "enum": ["REGISTRATION_REWARD", "DEPOSIT", "PLAN_PURCHASE", "SESSION_RETURN", "WITHDRAWAL", "REFUND", "ADMIN_ADJUSTMENT"] },
+        "amount": { "type": "integer" },
+        "status": { "type": "string", "enum": ["completed", "pending", "failed"] },
+        "referenceId": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["transactionId", "uid", "type", "category", "amount", "status", "createdAt"]
+    },
+    "Plan": {
+      "title": "Plan",
+      "description": "Configurable yield/session plan",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "amount": { "type": "integer" },
+        "durationSeconds": { "type": "integer" },
+        "returnRateBps": { "type": "integer" },
+        "enabled": { "type": "boolean" },
+        "description": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["name", "amount", "durationSeconds", "returnRateBps", "enabled"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "Active or completed investment session",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "maxLength": 128 },
+        "uid": { "type": "string", "maxLength": 128 },
+        "planId": { "type": "string", "maxLength": 128 },
+        "planName": { "type": "string", "maxLength": 100 },
+        "principal": { "type": "integer" },
+        "configuredReturn": { "type": "integer" },
+        "totalCredit": { "type": "integer" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endsAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "active", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "uid", "planId", "principal", "configuredReturn", "totalCredit", "status"]
+    },
+    "Deposit": {
+      "title": "Deposit",
+      "description": "Incoming deposit request and verification",
+      "type": "object",
+      "properties": {
+        "depositId": { "type": "string", "maxLength": 128 },
+        "uid": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "integer" },
+        "providerReference": { "type": "string", "maxLength": 150 },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "verifiedAt": { "type": "string", "format": "date-time" },
+        "verifiedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["depositId", "uid", "amount", "status", "createdAt"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "Payout and settlement request",
+      "type": "object",
+      "properties": {
+        "withdrawalId": { "type": "string", "maxLength": 128 },
+        "uid": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "integer" },
+        "destination": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "maxLength": 20 },
+            "value": { "type": "string", "maxLength": 100 }
+          }
+        },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "approved", "settled", "rejected"] },
+        "requestedAt": { "type": "string", "format": "date-time" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "reviewedBy": { "type": "string", "maxLength": 128 },
+        "settledAt": { "type": "string", "format": "date-time" },
+        "providerReference": { "type": "string", "maxLength": 150 }
+      },
+      "required": ["withdrawalId", "uid", "amount", "status", "requestedAt"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Customer support ticket",
+      "type": "object",
+      "properties": {
+        "ticketId": { "type": "string", "maxLength": 128 },
+        "uid": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 200 },
+        "subject": { "type": "string", "maxLength": 150 },
+        "category": { "type": "string", "maxLength": 50 },
+        "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"] },
+        "status": { "type": "string", "enum": ["open", "in_progress", "waiting_for_user", "resolved", "closed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ticketId", "uid", "subject", "status", "createdAt"]
+    },
+    "TicketMessage": {
+      "title": "TicketMessage",
+      "description": "Message entry inside a support ticket conversation",
+      "type": "object",
+      "properties": {
+        "senderUid": { "type": "string", "maxLength": 128 },
+        "senderRole": { "type": "string", "enum": ["user", "support", "admin", "super_admin"] },
+        "message": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderUid", "senderRole", "message", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notification event",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "message": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "maxLength": 50 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "title", "message", "type", "read", "createdAt"]
+    },
+    "AdminLog": {
+      "title": "AdminLog",
+      "description": "Immutable administrative audit trail",
+      "type": "object",
+      "properties": {
+        "adminUid": { "type": "string", "maxLength": 128 },
+        "adminEmail": { "type": "string", "maxLength": 200 },
+        "action": { "type": "string", "maxLength": 100 },
+        "targetType": { "type": "string", "maxLength": 50 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "reason": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminUid", "action", "createdAt"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "registrationReward": { "type": "integer" },
+        "minWithdrawal": { "type": "integer" },
+        "minDeposit": { "type": "integer" },
+        "maintenanceMode": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["registrationReward", "minWithdrawal"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User account documents keyed by Firebase UID"
+    },
+    "/wallets/{uid}": {
+      "schema": "Wallet",
+      "description": "User financial ledger summary and balances keyed by Firebase UID"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Authoritative immutable financial transaction history"
+    },
+    "/plans/{planId}": {
+      "schema": "Plan",
+      "description": "Available product plans created and managed by administrators"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "User investment and yield sessions"
+    },
+    "/deposits/{depositId}": {
+      "schema": "Deposit",
+      "description": "Deposit requests and payment tracking"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": "Withdrawal",
+      "description": "Withdrawal payout requests and settlement status"
+    },
+    "/supportTickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Support request tickets"
+    },
+    "/supportTickets/{ticketId}/messages/{messageId}": {
+      "schema": "TicketMessage",
+      "description": "Conversation messages within a support ticket"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User-facing alerts and notification history"
+    },
+    "/adminLogs/{logId}": {
+      "schema": "AdminLog",
+      "description": "Audit records for administrative compliance and operations"
+    },
+    "/settings/{settingId}": {
+      "schema": "Setting",
+      "description": "System-wide parameters and financial limits"
+    }
+  }
+}
